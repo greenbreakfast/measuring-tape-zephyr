@@ -1,0 +1,35 @@
+/ {
+    aliases {
+        my-led = &red_led;
+        distance-sensor = &vl53l1x_i2c1;
+        trigger-button = &user_button_0_A;
+    };
+};
+
+&pinctrl {
+    i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO26>,
+				 <I2C1_SCL_GPIO0>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};
+
+&i2c1 {
+    status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-gpios = <&gpio0 26 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 0 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c1_default>;
+	scl-timeout-us = <0>;
+	pinctrl-names = "default";
+
+    vl53l1x_i2c1: vl53l1x@29 {
+        compatible = "custom,vl53l1x";
+        reg = < 0x29 >;
+        status = "okay";
+    };
+};

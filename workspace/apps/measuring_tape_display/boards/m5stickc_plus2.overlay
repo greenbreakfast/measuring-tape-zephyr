@@ -1,0 +1,63 @@
+/ {
+    aliases {
+        my-led = &red_led;
+        distance-sensor = &vl53l1x_i2c1;
+        trigger-button = &user_button_0_A;
+		backlight-ctrl = &tft_backlight_ctrl_pwm_gpio27;
+		backlight-button = &user_button_1_B;
+    };
+
+	backlight_ctrl {
+        compatible = "pwm-leds";
+        tft_backlight_ctrl_pwm_gpio27: tft_backlight_ctrl_pwm_gpio27 {
+            pwms = <&ledc0 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+        };
+    };
+};
+
+&pinctrl {
+    i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO26>,
+				 <I2C1_SCL_GPIO0>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	ledc0_default: ledc0_default {
+        group1 {
+            pinmux = <LEDC_CH0_GPIO27>;
+			output-enable;
+        };
+    };
+};
+
+&i2c1 {
+    status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-gpios = <&gpio0 26 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 0 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c1_default>;
+	scl-timeout-us = <0>;
+	pinctrl-names = "default";
+
+    vl53l1x_i2c1: vl53l1x@29 {
+        compatible = "custom,vl53l1x";
+        reg = < 0x29 >;
+        status = "okay";
+    };
+};
+
+&ledc0 {
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};

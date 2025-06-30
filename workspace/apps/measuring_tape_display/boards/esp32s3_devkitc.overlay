@@ -1,0 +1,140 @@
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+    aliases {
+        my-led = &led0;
+        distance-sensor = &vl53l1x_i2c0;
+        trigger-button = &button_1;
+        backlight-ctrl = &st7735r_backlight_ctrl_pwm;
+        backlight-button = &button_2;
+        // pwm0 = &pwm0;
+    };
+
+    chosen {
+        zephyr,display = &st7735r_160x80;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led0: d13 {
+            gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+    buttons {
+        compatible = "gpio-keys";
+        
+        button_1: d5 {
+            gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        };
+        button_2: d4 {
+            gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        };
+    };
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        spi-dev = <&spi2>;
+        dc-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st7735r_160x80: st7735r@0 {
+            compatible = "sitronix,st7735r";
+            reg = <0>;
+            mipi-max-frequency = <20000000>;
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			reg = <0>;
+			width = <160>;
+			height = <80>;
+			inversion-on;
+			rgb-is-inverted;
+			x-offset = <1>;
+			y-offset = <26>;
+			pwctr1 = [A2 02 84];
+			pwctr2 = [C5];
+			pwctr3 = [0A 00];
+			pwctr4 = [8A 2A];
+			pwctr5 = [8A EE];
+			invctr = <7>;
+			frmctr1 = [01 2C 2D];
+			frmctr2 = [01 2C 2D];
+			frmctr3 = [01 2C 2D 01 2C 2D];
+			vmctr1 = <14>;
+			gamctrp1 = [02 1C 07 12 37 32 29 2D 29 25 2B 39 00 01 03 10];
+			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
+			colmod = <5>;
+			/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default */
+			madctl = <184>; /* Set to <120> to rotate the image 180 degrees. */
+			caset = [00 01 00 a0];
+			raset = [00 1a 00 69];
+        };
+    };
+
+    backlight_ctrl {
+        compatible = "pwm-leds";
+        st7735r_backlight_ctrl_pwm: st7735r_backlight_ctrl_pwm {
+            pwms = <&ledc0 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+        };
+    };
+};
+
+&pinctrl {
+    i2c0_custom_pins: i2c0_custom_pins {
+        group1 {
+            pinmux = <I2C0_SDA_GPIO15>, <I2C0_SCL_GPIO16>;	// SDA on GPIO15, SCL on GPIO16
+            bias-pull-up; 									// Enable pull-up resistors for both pins
+            drive-open-drain; 								// Required for I2C
+            output-high; 									// Start with lines high (inactive state)
+        };
+    };
+
+    spi2_custom_pins: spi2_custom_pins {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO11>,
+				 <SPIM2_SCLK_GPIO12>,
+				 <SPIM2_CSEL_GPIO9>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO10>;
+			output-low;
+		};
+	};
+
+    ledc0_default: ledc0_default {
+        group1 {
+            pinmux = <LEDC_CH0_GPIO17>;
+			output-enable;
+        };
+    };
+};
+
+&spi2 {
+    pinctrl-0 = <&spi2_custom_pins>;
+    status = "okay";
+};
+
+&i2c0 {
+    pinctrl-0 = <&i2c0_custom_pins>;
+    status = "okay";
+
+    vl53l1x_i2c0: vl53l1x@29 {
+        compatible = "custom,vl53l1x";
+        reg = < 0x29 >;
+        status = "okay";
+    };
+};
+
+&ledc0 {
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};

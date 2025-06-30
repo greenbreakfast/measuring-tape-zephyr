@@ -1,0 +1,257 @@
+/*
+ * Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_pico_v3_02.dtsi>
+#include "m5stickc_plus2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <espressif/partitions_0x1000_default_8M.dtsi>
+
+/ {
+	model = "M5StickC Plus2 PROCPU";
+	compatible = "custom,m5stickc-plus2";
+
+	aliases {
+		led0 = &red_led;
+		sw0-a = &user_button_0_A;
+		sw1-b = &user_button_1_B;
+        sw2-c = &user_button_2_C;
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		accel0 = &mpu6886;
+		rtc = &bm8563;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,rtc = &bm8563;
+		zephyr,display = &st7789v;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios =  <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			label = "Red - LED0";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_0_A: button_0 {
+			label = "User button 0 (A)";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_1_B: button_1 {
+			label = "User button 1 (B)";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+        user_button_2_C: button_2 {
+			label = "User button 1 (C)";
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+    // display connections
+    // GPIO5	CS
+    // GPIO13	SCK
+    // GPIO15 	MOSI
+    // GPIO14	D/C
+    // GPIO12	RST
+    // GPIO27 	SGM2578	VLED
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi3>;
+		dc-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <20000000>;
+
+			width = <135>;
+			height = <240>;
+			x-offset = <53>;
+			y-offset = <40>;
+
+			vcom = <0x28>;
+			gctrl = <0x35>;
+			vrhs = <0x10>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x55>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 00];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+			ram-param = [00 F0];
+			rgb-param = [40 02 14];
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
+	};
+
+    // TODO: Do something about GPIO27 controlling the TFT backlight through SGM2578
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+	
+	power_hold: power_hold {
+		gpio-hog;            /* tell Zephyr to configure this pin early   */
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;         /* drive the line high at boot              */
+		line-name = "pmic_hold";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/* IMU MPU-6886, RTC BM8563 */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c0_default>;
+	scl-timeout-us = <0>;
+	pinctrl-names = "default";
+
+	mpu6886: mpu6886@68 {
+		status = "okay";
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+	};
+
+	bm8563: bm8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+};
+
+// &spi2 {
+// 	#address-cells = <1>;
+// 	#size-cells = <0>;
+// 	status = "okay";
+// 	pinctrl-0 = <&spim2_miso_gpio17 &spim2_mosi_gpio23
+// 				&spim2_sclk_gpio6 &spim2_csel_gpio11>;
+// 	pinctrl-names = "default";
+// };
+
+/* LCD TFT 1.14", 135x240 px, ST7789v2 */
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+// # ESP-IDF Partition Table
+// # Name, Type, SubType, Offset, Size, Flags
+// nvs,data,nvs,0x9000,20K,
+// otadata,data,ota,0xe000,8K,
+// app0,app,ota_0,0x10000,3M,
+// spiffs,data,spiffs,0x310000,896K,
+// coredump,data,coredump,0x3f0000,64K,
+
+// TODO: confirm this is required and correct
+// &flash0 {
+// 	status = "okay";
+// 	partitions {
+// 		compatible = "fixed-partitions";
+// 		#address-cells = <1>;
+// 		#size-cells = <1>;
+
+// 		/* Reserve 60kB for the bootloader */
+// 		boot_partition: partition@1000 {
+// 			label = "mcuboot";
+// 			reg = <0x00001000 0x0000F000>;
+// 			read-only;
+// 		};
+
+// 		// /* Reserve 1024kB for the application in slot 0 */
+// 		// slot0_partition: partition@10000 {
+// 		// 	label = "image-0";
+// 		// 	reg = <0x00010000 0x00100000>;
+// 		// };
+
+// 		// /* Reserve 1024kB for the application in slot 1 */
+// 		// slot1_partition: partition@110000 {
+// 		// 	label = "image-1";
+// 		// 	reg = <0x00110000 0x00100000>;
+// 		// };
+
+// 		// /* Reserve 256kB for the scratch partition */
+// 		// scratch_partition: partition@210000 {
+// 		// 	label = "image-scratch";
+// 		// 	reg = <0x00210000 0x00040000>;
+// 		// };
+
+// 		// storage_partition: partition@250000 {
+// 		// 	label = "storage";
+// 		// 	reg = <0x00250000 0x00006000>;
+// 		// };
+
+// 		/* Reserve 3MB for the application in slot 0 */
+// 		slot0_partition: partition@10000 {
+// 			label = "image-0";
+// 			reg = <0x00010000 0x00300000>;
+// 		};
+// 	};
+// };
+
+&esp32_bt_hci {
+	status = "okay";
+};

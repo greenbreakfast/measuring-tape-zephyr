@@ -1,0 +1,6 @@
+name: vl53l1x
+build:
+  cmake: .
+  kconfig: Kconfig
+  settings:
+    dts_root: .

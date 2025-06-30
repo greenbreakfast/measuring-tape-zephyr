@@ -1,0 +1,43 @@
+/ {
+    aliases {
+        my-led = &led0;
+        distance-sensor = &vl53l1x_i2c0;
+        trigger-button = &button_1;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led0: d13 {
+            gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+        };
+    };
+    buttons {
+        compatible = "gpio-keys";
+        
+        button_1: d5 {
+            gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        };
+    };
+};
+
+&pinctrl {
+    i2c0_custom_pins: i2c0_custom_pins {
+        group1 {
+            pinmux = <I2C0_SDA_GPIO15>, <I2C0_SCL_GPIO16>;	// SDA on GPIO15, SCL on GPIO16
+            bias-pull-up; 									// Enable pull-up resistors for both pins
+            drive-open-drain; 								// Required for I2C
+            output-high; 									// Start with lines high (inactive state)
+        };
+    };
+};
+
+&i2c0 {
+    pinctrl-0 = <&i2c0_custom_pins>;
+    status = "okay";
+
+    vl53l1x_i2c0: vl53l1x@29 {
+        compatible = "custom,vl53l1x";
+        reg = < 0x29 >;
+        status = "okay";
+    };
+};

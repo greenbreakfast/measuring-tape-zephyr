@@ -1,0 +1,6 @@
+board:
+  name: m5stickc_plus2
+  full_name: M5StickC PLUS2
+  vendor: custom
+  socs:
+  - name: esp32
