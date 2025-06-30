@@ -1,43 +1,17 @@
-## Host System Setup
+# I2C Shell
 
-### Setup
+Application to show I2C shell on device. Useful for debugging device addresses or testing commands.
 
-In introduction-to-zephyr dir:
-
-```
-python -m venv venv
-source venv/bin/activate
-python -m pip install pyserial==3.5 esptool==4.8.1
-```
-
-### Activating venv
-
-```
-source venv/bin/activate
-```
-
+*All instructions below assume instructions in top-level README were followed previously.*
 
 ## Build with west
 
-In `01_blink` dir:
+Run in Docker container
 
 ```
 west build -p always -b esp32s3_devkitc/esp32s3/procpu -- -DDTC_OVERLAY_FILE=boards/esp32s3_devkitc.overlay 
 ```
 
-## Flash to board (from host system)
+## Flash to board 
 
-Find port and set to variable:
-```
-port=/dev/tty.usbserial-14110
-```
-
-```
-python -m esptool --port $port --chip auto --baud 921600 --before default_reset --after hard_reset write_flash -u --flash_mode keep --flash_freq 40m --flash_size detect 0x0 workspace/apps/01_blink/build/zephyr/zephyr.bin
-``` 
-
-## Checking serial output
-
-```
-python -m serial.tools.miniterm "$port" 115200
-```
+See top-level README

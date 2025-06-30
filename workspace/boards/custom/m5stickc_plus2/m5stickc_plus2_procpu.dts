@@ -160,6 +160,7 @@
 	};
 };
 
+// NOTE: disabling SPI2, not needed in Plus2 Board
 // &spi2 {
 // 	#address-cells = <1>;
 // 	#size-cells = <0>;
@@ -198,15 +199,7 @@
 	status = "okay";
 };
 
-// # ESP-IDF Partition Table
-// # Name, Type, SubType, Offset, Size, Flags
-// nvs,data,nvs,0x9000,20K,
-// otadata,data,ota,0xe000,8K,
-// app0,app,ota_0,0x10000,3M,
-// spiffs,data,spiffs,0x310000,896K,
-// coredump,data,coredump,0x3f0000,64K,
-
-// TODO: confirm this is required and correct
+// NOTE: disabling this partition map, instead using default Espressif 8MB flash partition from included dtsi file above
 // &flash0 {
 // 	status = "okay";
 // 	partitions {
