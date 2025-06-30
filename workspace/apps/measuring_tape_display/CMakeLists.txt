@@ -5,4 +5,5 @@ set(ZEPHYR_EXTRA_MODULES "${CMAKE_SOURCE_DIR}/../../modules/vl53l1x")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(measuring_tape)
 
-target_sources(app PRIVATE src/main.c) 
+FILE(GLOB app_sources src/*.c)
+target_sources(app PRIVATE ${app_sources})
