@@ -13,7 +13,7 @@ static lv_obj_t *measurement_label;
 int tft_display_init(void) {
     const struct device *display;
     lv_obj_t *unit_label;
-    lv_style_t measurement_label_style;
+    static lv_style_t measurement_label_style;  // must be static: LVGL stores a pointer to the style struct and expects that style object to remain valid for as long as any widget uses it
 
     // Initialize the display
     display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -68,6 +68,7 @@ int tft_display_set_backlight_pwm(uint32_t duty_cycle) {
     return 0;
 }
 
+// update the measurement label with the given text
 int tft_display_set_measurement_text(const char *text) {
     if (measurement_label == NULL) {
         printk("Error: measurement label is not initialized\n");
